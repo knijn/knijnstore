@@ -1,26 +1,41 @@
-#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-; #Warn  ; Enable warnings to assist with detecting common errors.
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
-
 ; KnijnStore application written in AHK to easily install Knijn apps.
+#NoEnv
+SendMode Input
+SetWorkingDir %A_ScriptDir%
+#Include, logger.ahk
+#Include, versioncompare.ahk
 
-verNum = 0.1.1
+
+verNum = 0.1.2
 
 UrlDownloadToFile, https://knijn.github.io/knijnstore/index.ini, index.ini
 IniRead, latestVer, index.ini, KnijnStoreApp, latestVer , 0.0.1
 IniRead, appCount, index.ini,  KnijnStoreApp, appCount , 1
 
-defaultStatus = KnijnStore version %verNum%  Latest version: %latestVer%
-defaultStatusSTR := defaultStatus
+if(VersionCompare(latestVer,verNum)) {
+    MsgBox, Your KnijnStore might be out of date, please update using the update button
+}
+
+IfNotExist,config.ini  ; Setup config.ini keys to configure the program
+    MsgBox, The target file does not exist
+    IniWrite, false, config.ini, Privacy, noTrack
+    IniWrite, nill, config.ini, Apps, Item Downloader
+
+
+defaultStatus = KnijnStore version: %verNum% Latest version: %latestVer%
 
 
 Download(item) { ; Download function to download apps
     SB_SetText("Started app download")
     IniRead, exeDownload, index.ini,  %item%, exeDownload , about:blank
     IniRead, name, index.ini,  %item%, name , about:blank
+    IniRead, appLatestVer, index.ini, %item%, latestVer, 0.0.0 
+    
+    IniWrite, %appLatestVer%, config.ini, Apps, %name%
+    SendDownloadLog(name,appLatestVer)
+    
     UrlDownloadToFile, %exeDownload%, %name%.exe
-    SB_SetText(defaultStatusSTR)
+    SB_SetText("Done with app download")
 }
 
 Run(item) {
@@ -60,7 +75,6 @@ IniRead, appLatestVer, index.ini,  1, latestVer , 0.0.0
 IniRead, description, index.ini,  1, description , Unknown App
 IniRead, exeDownload, index.ini,  1, exeDownload , about:blank
 
-
 Gui, Add, GroupBox, x10 y160 w380 h100, %name%  [1]
 Gui, Add, Text, x20 y190 w300 h30, %description%
 Gui, Add, Text, x20 y240 w90 h15, v%appLatestVer%
@@ -85,6 +99,7 @@ return
 run1:
     Run(1)
 return 
+
 
 
 GuiClose:
