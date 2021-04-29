@@ -2,63 +2,24 @@
 #NoEnv
 SendMode Input
 SetWorkingDir %A_ScriptDir%
-#Include, logger.ahk
-#Include, versioncompare.ahk
-
+#Include, utils.ahk
 
 verNum = 0.1.2
+defaultStatus = KnijnStore version: %verNum% Latest version: %latestVer%
+configStatus := FileExist(config.ini)
 
 UrlDownloadToFile, https://knijn.github.io/knijnstore/index.ini, index.ini
-IniRead, latestVer, index.ini, KnijnStoreApp, latestVer , 0.0.1
-IniRead, appCount, index.ini,  KnijnStoreApp, appCount , 1
 
-if(VersionCompare(latestVer,verNum)) {
+
+if(VersionCompare(latestVer,verNum)) { ; Check for if user has latest version
     MsgBox, Your KnijnStore might be out of date, please update using the update button
 }
 
-IfNotExist,config.ini  ; Setup config.ini keys to configure the program
-    MsgBox, The target file does not exist
-    IniWrite, false, config.ini, Privacy, noTrack
-    IniWrite, nill, config.ini, Apps, Item Downloader
+IniRead, latestVer, index.ini, KnijnStoreApp, latestVer , 0.0.1
+IniRead, appCount, index.ini,  KnijnStoreApp, appCount , 1
 
-
-defaultStatus = KnijnStore version: %verNum% Latest version: %latestVer%
-
-
-Download(item) { ; Download function to download apps
-    SB_SetText("Started app download")
-    IniRead, exeDownload, index.ini,  %item%, exeDownload , about:blank
-    IniRead, name, index.ini,  %item%, name , about:blank
-    IniRead, appLatestVer, index.ini, %item%, latestVer, 0.0.0 
-    
-    IniWrite, %appLatestVer%, config.ini, Apps, %name%
-    SendDownloadLog(name,appLatestVer)
-    
-    UrlDownloadToFile, %exeDownload%, %name%.exe
-    SB_SetText("Done with app download")
-}
-
-Run(item) {
-    IniRead, name, index.ini,  %item%, name , nill
-    i = %name%.exe
-    o := i
-    If (fileExist(o)) {
-        Run, %name%
-    }
-    Else {
-        MsgBox,, Error, The program has not been downloaded yet, please download it first
-    } 
-}
-
-SelfUpdate() {
-    IniRead, exeDownload, index.ini, KnijnStoreApp, exeDownload, nill
-    UrlDownloadToFile, %exeDownload%, knijnstore.exe
-    Run, knijnstore.exe
-    ExitApp
-}
-
-SelfInstall() {
-    FileCreateShortcut, %A_ScriptFullPath%, %A_Desktop%\Knijn Store.lnk , %A_ScriptDir%, installed, Start the KnijnStore
+if(configStatus != N) { ; Setup config.ini keys to configure the program  
+   RebuildConfig() 
 }
 
 
